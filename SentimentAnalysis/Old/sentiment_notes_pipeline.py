@@ -1,4 +1,4 @@
-# sentiment_notes_pipeline.py
+#!/usr/bin/env python3
 
 import os
 from pathlib import Path

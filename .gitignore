@@ -1,4 +1,4 @@
 .env
 data/
-SentimentAnalysis/SECData/
-SentimentAnalysis/outputs/
+SentimentAnalysis/Old/SECData/
+SentimentAnalysis/Old/outputs/
