@@ -4,83 +4,70 @@
 
 Run these commands from the project root:
 
-- `make`: Main command: download + run sentiment pipeline
-- `make get-notes`: Download latest SEC notes dataset
-- `make run-pipeline`: Run sentiment pipeline on most recent dataset
+- `make`: Shows available targets
+- `make get-data`: Download dataset from Kaggle
+- `make filter-data n=10000`: Filter to busiest month and sample 10,000 rows (optional `n`)
+- `make get-sentiments`: Run FinBERT sentiment pipeline dataset from data
+- `make sentiment n=10000`: Run full pipeline (download --> filter --> analyze)
 
-### download_latest_notes.py
+---
 
-This script automatically downloads the **latest monthly SEC financial statement notes dataset** and unzips it into:
+## Scripts
 
-```text
-/SentimentAnalysis/SECData/<year>_<month>_notes/
-```
+### get_data.py
 
-### sentiment_notes_pipeline.py
+Downloads the **"Massive Stock News Analysis DB for NLP/backtests"** from Kaggle:  
+`https://www.kaggle.com/datasets/miguelaenlle/massive-stock-news-analysis-db-for-nlpbacktests`
 
-This script makes a sentiment analysis on SEC financial statement notes using FinBERT.
+Places into `/SentimentAnalysis/data/`
 
----------------------------------------------------------------------
-Download from: `https://www.sec.gov/data-research/sec-markets-data/financial-statement-notes-data-sets`
+Requires:
 
-Unzip into
-    /SentimentAnalysis/\<year\>_\<month\>_notes/
+- Kaggle credentials file at `~/.kaggle/kaggle.json`, or
+- Environment variables `KAGGLE_USERNAME` and `KAGGLE_KEY`
 
----------------------------------------------------------------------
+---
 
-#### SEC File Structure Used in Pipeline
+### filter_data.py
 
-##### txt.tsv
+Filters the dataset to the **busiest month** within the **busiest year**  
+(based on number of news records).
 
-- Has raw content (disclosure blocks) from 10-K / 10-Q filings
-- each row represents a disclosure block
-- Columns:
-  - adsh: Accession number (filing UID)
-  - tag: XBRL element (e.g. us-gaap:AccountingPoliciesTextBlock)
-  - ddate: Date of disclosure
-  - value: Text content (this goes into FinBERT)
+- Optional: Sample fixed number of random rows from that month using the `-n` or `n=...` argument.
+- Creates `/SentimentAnalysis/data/filtered_analyst_ratings.csv`
 
-##### ren.tsv
+The file will be used as input for the sentiment pipeline if it exists.
 
-- Rendering info — used to find which sections are "Notes"
-- Each filing has menu category (menucat):
-  - F = Financial Statements
-  - N = Notes to Financial Statements (this is what we keep)
-  - M = MD&A (Management Discussion & Analysis)
+---
 
-- Columns:
-  - adsh: Accession number (filing UID)
-  - menucat: Menu category
+### get_sentiments.py
 
-##### sub.tsv
+Runs **FinBERT** (ProsusAI/finbert) on all headlines/text content in the dataset.
 
-- Metadata for each filing
-- Columns:
-  - adsh: Accession number (filing UID)
-  - cik: Central Index Key (company UID)
-  - name: Company name
-  - fp: Filing period (Q1, FY, etc.)
-  - fye: Fiscal year-end (1231 for Dec 31)
+- Combines **daily average sentiment scores** from headlines:
+  - `+1 = positive`
+  - `-1 = negative`
+  - `0 = neutral`
+- Daily scores are **averaged** (as float) and forward-filled across calendar dates.
 
----------------------------------------------------------------------
+Creates `/SentimentAnalysis/outputs/daily_sentiment.csv`
 
-### Output Files
+---
 
-The following files are saved into the `/outputs/` directory:
+## Output File
 
-#### `2025_03_per_note.csv`
+### `daily_sentiment.csv`
 
-Sentiment for each individual disclosure block
+One unique row per day. If a date has no headlines, the last known sentiment is forward-filled.
 
-| adsh     | tag         | value                      | sentiment | score |
-|----------|-------------|----------------------------|-----------|-------|
-| Filing A | RevenueNote | “We believe...”            | positive  | 0.92  |
-| Filing A | RiskNote    | “We face uncertainty…”     | negative  | 0.81  |
+| date       | sentiment |
+|------------|-----------|
+| 2019-10-25 | -0.67     |
+| 2019-10-26 | -0.42     |
+| 2019-10-27 | -0.42     |
+| 2019-10-28 |  0.18     |
 
-#### `2025_03_per_filing.csv`
+- `date`: Calendar date in `YYYY-MM-DD` format
+- `sentiment`: Average sentiment (float in range [-1, 1])
 
-Combines all note sentiments into one row per filing
-
-| adsh     | cik    | name       | n_notes | pos | neg | neu | mean_signed | overall_sentiment |
-|----------|--------|------------|---------|-----|-----|-----|--------------|--------------------|
-| Filing A | 123456 | Tesla Inc. | 8       | 3   | 2   | 3   | 0.125        | bullish            |
+---
