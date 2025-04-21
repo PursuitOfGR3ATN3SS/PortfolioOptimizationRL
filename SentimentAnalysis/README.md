@@ -63,21 +63,24 @@ Unzip into
   - fye: Fiscal year-end (1231 for Dec 31)
 
 ---------------------------------------------------------------------
-Output:
 
-Two CSV files saved to the `/outputs/` directory:
+### Output Files
 
-1. 2025_03_per_note.csv
-    Sentiment for each individual disclosure block.
-    Columns: adsh | tag | value | sentiment | score
+The following files are saved into the `/outputs/` directory:
 
-    Example:
-    Filing A | RevenueNote | “We believe...”         | positive | 0.92  
-    Filing A | RiskNote    | “We face uncertainty…”  | negative | 0.81
+#### `2025_03_per_note.csv`
 
-2. 2025_03_per_filing.csv
-    Combines all note sentiments into one row per filing.
-    Columns: adsh | cik | name | n_notes | pos | neg | neu | mean_signed | overall_sentiment
+Sentiment for each individual disclosure block
 
-    Example:
-    Filing A | 123456 | Tesla Inc. | 8 | 3 | 2 | 3 | 0.125 | bullish
+| adsh     | tag         | value                      | sentiment | score |
+|----------|-------------|----------------------------|-----------|-------|
+| Filing A | RevenueNote | “We believe...”            | positive  | 0.92  |
+| Filing A | RiskNote    | “We face uncertainty…”     | negative  | 0.81  |
+
+#### `2025_03_per_filing.csv`
+
+Combines all note sentiments into one row per filing
+
+| adsh     | cik    | name       | n_notes | pos | neg | neu | mean_signed | overall_sentiment |
+|----------|--------|------------|---------|-----|-----|-----|--------------|--------------------|
+| Filing A | 123456 | Tesla Inc. | 8       | 3   | 2   | 3   | 0.125        | bullish            |
