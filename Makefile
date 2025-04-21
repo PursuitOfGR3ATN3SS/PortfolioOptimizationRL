@@ -5,8 +5,8 @@
 # Default behavior
 all:
 	@echo "Please specify a target:"
-	@echo "	 make get-notes				# Download latest SEC dataset"
-	@echo "	 make run-pipeline    # Run sentiment analysis"
+	@echo "  make get-notes       # Download latest SEC dataset"
+	@echo "  make run-pipeline    # Run sentiment analysis"
 	@echo "  make sentiment       # Download + Run sentiment analysis"
 
 # Downloads the latest SEC dataset into SECData/<year>_<month>_notes
