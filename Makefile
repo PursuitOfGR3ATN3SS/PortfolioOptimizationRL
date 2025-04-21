@@ -1,23 +1,29 @@
 # Makefile
 
-.PHONY: all get-notes run-pipeline sentiment
+.PHONY: all get-data filter-data get-sentiments sentiment
 
 # Default behavior
 all:
 	@echo "Please specify a target:"
-	@echo "  make get-notes       # Download latest SEC dataset"
-	@echo "  make run-pipeline    # Run sentiment analysis"
-	@echo "  make sentiment       # Download + Run sentiment analysis"
+	@echo "  make get-data               # Download dataset from Kaggle"
+	@echo "  make filter-data [n=...]    # Filter by busiest month (optionally sample N rows)"
+	@echo "  make get-sentiments         # Run sentiment analysis on filter data"
+	@echo "  make sentiment [n=...]      # Run full pipeline: download --> filter --> analyze"
 
-# Downloads the latest SEC dataset into SECData/<year>_<month>_notes
-get-notes:
-	@echo "Downloading latest SEC notes dataset..."
-	python SentimentAnalysis/download_latest_notes.py
+# Downloads dataset into /SentimentAnalysis/data/
+get-data:
+	@echo "Downloading dataset via Kaggle API..."
+	python SentimentAnalysis/get_data.py
 
-# Runs the sentiment analysis on the most recent dataset
-run-pipeline:
-	@echo "Running sentiment analysis on latest notes dataset..."
-	python SentimentAnalysis/sentiment_notes_pipeline.py
+# Filters to busiest month, optionally random sample N rows: 'n=...'
+filter-data:
+	@echo "Filtering dataset to busiest year/month..."
+	python SentimentAnalysis/filter_data.py $(if $(n),-n $(n),)
 
-# Download latest, then run sentiment analysis
-sentiment: get-notes run-pipeline
+# Runs FinBERT sentiment analysis
+get-sentiments:
+	@echo "Running FinBERT sentiment analysis..."
+	python SentimentAnalysis/get_sentiments.py
+
+# full pipeline (data --> filter --> sentiment), supports 'n=...'
+sentiment: get-data filter-data get-sentiments
