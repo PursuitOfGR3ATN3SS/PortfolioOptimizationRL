@@ -1,47 +1,4 @@
-"""
-sentiment_notes_pipeline.py
-
-## Data Location
-Unzip file from https://www.sec.gov/data-research/sec-markets-data/financial-statement-notes-data-sets
-Into: /SentimentAnalysis/<year>_<month>_notes
-
-Runs FinBert sentiment, exports two CSVs.
-
-SEC data structure (what is used):
-  txt.tsv:
-    has raw content from filings
-    each row represents a disclosure block (like a paragraph or table from a 10-K or 10-Q filing)
-      - adsh
-        Accession number
-      - tag
-        Name of XBRL element (eg. us-gaap:AccountingPoliciesTextBlock)
-      - ddate
-        date of disclosure
-      - value
-        textual content (this is sent to FinBERT!)
-
-  ren.tsv:
-    rendering info to find how this is displayed in the SEC viewer
-    each adsh is matched with one or more menu categories
-      - adsh
-        Accession number
-      - menucat
-        Menu category
-        F = Financial Statements, N = Notes, M = MD&A (Management Discussion & Analysis)
-
-  sub.tsv:
-    contains metadata for each filing
-      - adsh
-        Accession number
-      - cik
-        Central Index Key (UID for company)
-      - name
-        Company name
-      - fp
-        Filing period (Q1, FY, etc.)
-      - fye
-        Fiscal year-end (1231 for Dec 31)
-"""
+# sentiment_notes_pipeline.py
 
 import os
 from pathlib import Path
@@ -56,7 +13,18 @@ CONFIG VARIABLES
 """
 
 # Path to the directory that holds txt.tsv / ren.tsv / sub.tsv
-DATA_DIR = Path(__file__).parent / "2025_03_notes" # Can change filename here (different months / years)
+
+SEC_ROOT = Path(__file__).parent / "SECData"
+
+def _latest_dataset_dir(root: Path) -> Path:
+    candidates = [d for d in root.iterdir() if d.is_dir() and d.name.endswith("_notes")]
+    if not candidates:
+        raise FileNotFoundError(f"No <year>_<month>_notes directory found in {root}")
+    # newest alphabetically = newest month
+    return sorted(candidates, reverse=True)[0]
+
+# DATA_DIR = Path(__file__).parent / "SECData" / "2025_03_notes" # Can change filename here (different months / years)
+DATA_DIR = _latest_dataset_dir(SEC_ROOT)
 OUT_DIR = Path(__file__).parent / "outputs" # where the CSVs will go
 BATCH_SIZE = 16
 NOTE_TOKEN_LIMIT = 512
@@ -173,8 +141,12 @@ def main():
 
     # aggregate and save results
     per_note, per_filing = aggregate(notes_sent, sub)
-    per_note.to_csv(OUT_DIR / "2025_03_per_note.csv", index=False)
-    per_filing.to_csv(OUT_DIR / "2025_03_per_filing.csv", index=False)
+
+    month_tag = DATA_DIR.name.split("_notes")[0]
+    per_note.to_csv(OUT_DIR / f"{month_tag}_per_note.csv", index=False)
+    per_filing.to_csv(OUT_DIR / f"{month_tag}_per_filing.csv", index=False)
+    # per_note.to_csv(OUT_DIR / "2025_03_per_note.csv", index=False)
+    # per_filing.to_csv(OUT_DIR / "2025_03_per_filing.csv", index=False)
 
     print("[done] CSVs written to", OUT_DIR.resolve())
 
