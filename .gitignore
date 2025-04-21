@@ -1,6 +1,6 @@
 .env
 data/
-SentimentAnalysis/Old/SECData/
-SentimentAnalysis/Old/outputs/
+SentimentAnalysis/Old/
+SentimentAnalysis/Old/
 SentimentAnalysis/data/
 SentimentAnalysis/outputs/
