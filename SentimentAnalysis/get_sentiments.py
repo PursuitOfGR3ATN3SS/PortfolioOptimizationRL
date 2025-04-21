@@ -102,9 +102,8 @@ def main():
     )
 
     # fill missing days (forward fill)
-    # UNCOMMENT
-    # full_range = pd.date_range(out_df.index.min(), out_df.index.max(), freq="D")
-    # out_df = out_df.reindex(full_range).ffill()
+    full_range = pd.date_range(out_df.index.min(), out_df.index.max(), freq="D")
+    out_df = out_df.reindex(full_range).ffill()
 
     # final formatting
     out_df.reset_index(inplace=True)
