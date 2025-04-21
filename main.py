@@ -1,58 +1,63 @@
+# === IMPORTS ===
 from stable_baselines3.common.env_checker import check_env
 from stable_baselines3 import PPO
 from stable_baselines3.common.callbacks import EvalCallback
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import DummyVecEnv
 
-from utils import get_all_tickers, validate_tickers, load_tickers, create_price_matrix
-import sys
-import os
+import os, sys, random, time
 sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
+from utils import validate_tickers, load_tickers, create_price_matrix, split_price_matrix, plot_portfolio_growth, sample_valid_tickers
 from env import PortfolioEnv
-import random
 import numpy as np
 from numpy import ndarray
 import torch
-import matplotlib.pyplot as plt
-import time
 
-def plot_portfolio_growth(portfolio_values) -> None:
-  portfolio_growth = np.cumprod(portfolio_values)
-  plt.plot(portfolio_growth)
-  plt.title("Portfolio Value Over Time")
-  plt.xlabel("Time Step")
-  plt.ylabel("Portfolio Value")
-  plt.show()
 
-def main(
-  num_stocks: int = 20,
-  seed: int = 42,
-  ) -> None:
-
+# === RUN AGENT ===
+def main(num_stocks: int = 20,seed: int = 41,) -> None:
+  # === Load portfolios tickers ===
   # Get all  U.S. or specified index Stock tickers
   tickers: list[str] = load_tickers()
-  assert len(tickers) > 0, "No tickers were fetched."
-  max_num_tickers: int = len(tickers)
+  start_date = "2019-05-01"
+  end_date = "2020-03-25"
 
   # Get all tickers for portfolio
-  assert max_num_tickers > num_stocks, "There are more stocks requested than valid tickers"
-  random.seed(seed)
-  portfolio_tickers: list[str] = random.sample(tickers, k=num_stocks) # All stock tickers that will be apart of the portfolio
-  print(portfolio_tickers)
+  portfolio_tickers = sample_valid_tickers(
+    tickers=tickers,
+    num_stocks=num_stocks,
+    seed=seed,
+    start_date=start_date,
+    end_date=end_date,
+  )
 
   # Create data matrix for optimization
-  price_data: ndarray = create_price_matrix(tickers=portfolio_tickers, start_date="2025-03-01", end_date="2025-03-31", interval="1d")
+  price_data, sentiment_data = create_price_matrix(
+    tickers=portfolio_tickers,
+    start_date=start_date,
+    end_date=end_date,
+    interval="1d",
+    sentiment_path="./data/daily_sentiment.csv"
+    )
 
+  train_prices, test_prices, train_sentiment, test_sentiment = split_price_matrix(
+    A=price_data, sentiment_data=sentiment_data, train_ratio=0.85,
+  )
+
+  # === SETUP ENV ===
   # Create portfolio
-  env = PortfolioEnv(asset_closing_prices=price_data)
-  check_env(env, warn=True)
+  train_env = DummyVecEnv([lambda: Monitor(PortfolioEnv(asset_closing_prices=train_prices.copy(), sentiment_data=train_sentiment))])
+  test_env = DummyVecEnv([lambda: Monitor(PortfolioEnv(asset_closing_prices=test_prices.copy(), sentiment_data=test_sentiment))])
 
+  check_env(test_env, warn=True)
+
+  # === SETUP MODEL ===
   # Optimize portfolio
-  model_path = "./best_model/best_model.zip"
-  log_dir = "./logs/"
+  previous_model_path: str = "./best_model/best_model.zip"
   eval_dir = "./best_model/"
 
-  if os.path.exists(model_path): model = PPO.load(model_path, env=env)
+  if os.path.exists(previous_model_path):
+    model = PPO.load(previous_model_path, env=train_env)
   else:
     ppo_kwargs = {
     "n_steps": 128,
@@ -61,33 +66,37 @@ def main(
     "ent_coef": 0.01,
     "device": torch.device('cuda:0' if torch.cuda.is_available() else 'cpu'),
     "verbose": 1
-}
-    model = PPO("MlpPolicy", env, **ppo_kwargs,)
-  env = DummyVecEnv([lambda: Monitor(PortfolioEnv(asset_closing_prices=price_data.copy()))])
-  eval_callback = EvalCallback(env,
-                                best_model_save_path=eval_dir,
-                                # log_path=log_dir,
-                                eval_freq=1000,
-                                deterministic=True,
-                                render=False
-                                )
-  start_time = time.time()
-  print(f"Timing starting")
-  model.learn(total_timesteps=100_000, callback=eval_callback)
-  model = PPO.load(model_path, env=env)
-  end_time = time.time()
-  print(f"Training took {end_time - start_time}")
+    }
+    model = PPO("MlpPolicy", train_env, **ppo_kwargs,)
 
-  # Evalaution
-  env = env.envs[0]
-  obs, _ = env.reset()[0]
+  # === CALLBACK ===
+  eval_callback = EvalCallback(
+    train_env,
+    best_model_save_path=eval_dir,
+    # log_path=log_dir,
+    eval_freq=1000,
+    deterministic=True,
+    render=False
+  )
+
+  # === TRAINING ===
+  print(f"Starting training...")
+  start_time = time.time()
+  model.learn(total_timesteps=100_000, callback=eval_callback)
+  end_time = time.time()
+  print(f"Training complete in {end_time - start_time:.2f} seconds.")
+
+  model = PPO.load(previous_model_path, env=train_env) # Load best model
+
+  # === EVALUATION ===
+  obs, _ = test_env.reset()
   done = False
   total_reward = 0
   portfolio_values = []
 
   while not done:
-    action, _ = model.predict(obs, deterministic=True)  # Use greedy policy for evaluation
-    obs, reward, done, info = env.step(action)
+    action, _ = model.predict(obs, deterministic=True)
+    obs, reward, done, info = test_env.step(action)
     total_reward += reward
     portfolio_values.append(info["portfolio_return"])
 

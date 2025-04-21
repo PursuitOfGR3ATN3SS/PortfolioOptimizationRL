@@ -7,7 +7,7 @@ class PortfolioEnv(Env):
   Portfolio Environment where agent learns to optimize allocations given the set of stocks.
   """
 
-  def __init__(self, asset_closing_prices: ndarray, initial_cash: float = 1_000_000.0) -> None:
+  def __init__(self, asset_closing_prices: ndarray, sentiment_data: ndarray | None = None, initial_cash: float = 1_000_000.0) -> None:
     """
     Args:
       asset_closing_prices (np.ndarray): The adjusted closing price of assets across time
@@ -19,6 +19,7 @@ class PortfolioEnv(Env):
     """
     super().__init__()
     self.asset_closing_prices = asset_closing_prices
+    self.sentiment_data = sentiment_data
     self.initial_cash_amount = initial_cash
     self.num_timesteps, self.num_assets = self.asset_closing_prices.shape
 
@@ -27,7 +28,7 @@ class PortfolioEnv(Env):
     self.observation_space = spaces.Box(
       low=0,
       high=1,
-      shape=(self.num_assets * 2 + 1, ), # Normalized prices for each asset, Each assets weights within the portfolio, normalized cash balance
+      shape=(self.num_assets * 2 + 1 + 1, ), # Normalized prices for each asset, Each assets weights within the portfolio, normalized cash balance, and sentiment
       dtype=np.float32
     )
 
@@ -39,23 +40,25 @@ class PortfolioEnv(Env):
   def _get_obs(self) -> ndarray:
     """
     Construct the observation vector.
-
+x
     Returns:
       observation (ndarray): Normalized prices + current weights + normalized cash
     """
     current_closing_prices = self.asset_closing_prices[self.current_step]
+    sentiment = self.sentiment[self.current_step] if self.sentiment is not None else np.array([0.0])
     normalized_prices = current_closing_prices / np.max(current_closing_prices)
     normalized_cash = self.current_cash_amount / self.initial_cash_amount
 
-    observation = np.concatenate([normalized_prices, self.weights, [normalized_cash]]).astype(np.float32)
+    observation = np.concatenate([
+    normalized_prices,          # (N,)
+    self.weights,               # (N,)
+    [normalized_cash],          # (1,)
+    sentiment                   # (1,)
+])
     return observation
 
   def reset(
-    self,
-    *,
-    seed: int | None = None,
-    return_info: bool = False,
-    options: dict | None = None
+    self,*,seed: int | None = None, options: dict | None = None
 ) -> ndarray | tuple[ndarray, dict]:
     """
     Reset environment to initial state and return the first observation.
@@ -115,7 +118,7 @@ class PortfolioEnv(Env):
     self.weights = action
 
     # Check if the episode is over
-    done = self.current_step >= self.num_timesteps - 1
+    terminated: bool = self.current_step >= self.num_timesteps - 1
 
     # Create the next observation
     observation = self._get_obs()
@@ -123,4 +126,4 @@ class PortfolioEnv(Env):
     # Track return
     info = {"portfolio_return": portfolio_return}
 
-    return observation, reward, done, False, info
+    return observation, reward, terminated, False, info
