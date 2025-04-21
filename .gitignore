@@ -1,3 +1,4 @@
 .env
 data/
-SentimentAnalysis/*_notes/
+SentimentAnalysis/SECData/
+SentimentAnalysis/outputs/
