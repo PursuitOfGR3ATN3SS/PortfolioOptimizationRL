@@ -1,6 +1,7 @@
 .env
 data/
-SentimentAnalysis/Old/
-SentimentAnalysis/Old/
+SentimentAnalysis/OldSentimentAnalysis/outputs/
+SentimentAnalysis/OldSentimentAnalysis/SECData/
+SentimentAnalysis/OldSentimentAnalysis/filtered_analyst_ratings.csv
 SentimentAnalysis/data/
 SentimentAnalysis/outputs/
