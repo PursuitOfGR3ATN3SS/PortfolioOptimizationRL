@@ -40,6 +40,16 @@ The file will be used as input for the sentiment pipeline if it exists.
 
 ---
 
+### filter_data2.py
+
+Filters the dataset by the **specified months**, inclusive.
+
+- Creates `/SentimentAnalysis/data/filtered_analyst_ratings.csv`
+
+The file will be used as input for the sentiment pipeline if it exists.
+
+---
+
 ### get_sentiments.py
 
 Runs **FinBERT** (ProsusAI/finbert) on all headlines/text content in the dataset.
