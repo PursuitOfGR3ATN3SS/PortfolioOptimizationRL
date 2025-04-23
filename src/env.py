@@ -45,7 +45,7 @@ x
       observation (ndarray): Normalized prices + current weights + normalized cash
     """
     current_closing_prices = self.asset_closing_prices[self.current_step]
-    sentiment = self.sentiment[self.current_step] if self.sentiment is not None else np.array([0.0])
+    sentiment = self.sentiment_data[self.current_step] if self.sentiment_data is not None else np.array([0.0])
     normalized_prices = current_closing_prices / np.max(current_closing_prices)
     normalized_cash = self.current_cash_amount / self.initial_cash_amount
 
@@ -58,7 +58,10 @@ x
     return observation
 
   def reset(
-    self,*,seed: int | None = None, options: dict | None = None
+    self,
+    *,
+    seed: int | None = None,
+    options: dict | None = None
 ) -> ndarray | tuple[ndarray, dict]:
     """
     Reset environment to initial state and return the first observation.
@@ -120,10 +123,12 @@ x
     # Check if the episode is over
     terminated: bool = self.current_step >= self.num_timesteps - 1
 
+    truncated = False
+
     # Create the next observation
     observation = self._get_obs()
 
     # Track return
     info = {"portfolio_return": portfolio_return}
 
-    return observation, reward, terminated, False, info
+    return observation, reward, terminated, truncated, info

@@ -218,6 +218,78 @@ def cache_tickers(tickers: list[str], out_path: str, start_date:str, end_date, v
   print(f"{len(tickers)} have been written to {out_path}")
 
 
+def remove_invalid_tickers_from_cache(invalid_tickers: list[str], cache_path: str) -> None:
+  """
+  Given a set of `invalid_tickers` that have been found, that are currently in the valid cache, remove them from `cache_path`
+
+  Args:
+    invalid_tickers (list[str]): Tickers that have been invalidated
+    cache_path (str): Where to read and write content.
+  """
+  current_tickers: set[str]
+  with open(cache_path, "r") as cache:
+    current_tickers = set(
+      cache.read().splitlines()
+    )
+  updated_cache_content: set[str] = set(
+    current_tickers - set(invalid_tickers)
+  )
+  with open(cache_path,"w") as cache:
+    cache.write("\n".join(list(updated_cache_content)))
+
+
+def sample_valid_tickers(
+  tickers: list[str],
+  num_stocks: int,
+  start_date: str,
+  end_date: str,
+  cache_path: str,
+  seed: int = 42,
+  max_attempts:int=20,
+  index: str ="nasdaq"
+) -> list[str]:
+  """
+  Randomly sample `num_stocks` tickers and ensure they have valid price data.
+  Retries until a valid set is found.
+  """
+  assert len(tickers) >= num_stocks, "Not enough tickers to sample from."
+
+  print(f"{start_date}-{end_date}")
+  random.seed(seed)
+
+  valid_subset: list[str] = []
+  attempt:int = 0
+
+  while len(valid_subset) != num_stocks and attempt < max_attempts:
+    portfolio_tickers = random.sample(tickers, k=num_stocks)
+
+    print(f"Attempt {attempt + 1}\nTrying tickers: {portfolio_tickers}")
+
+    valid_subset, invalid_subset = validate_tickers(
+      tickers=portfolio_tickers, start_date=start_date,
+      end_date=end_date,
+      batch_size=num_stocks if num_stocks <= 20 else 20
+    )
+
+    remove_invalid_tickers_from_cache(invalid_tickers=invalid_subset, cache_path=cache_path)
+
+    if len(valid_subset) == num_stocks:
+      print(f"Found valid tickers: {valid_subset}")
+      return valid_subset
+    else:
+      print(f"[!] Only {len(valid_subset)}/{num_stocks} were valid, retrying...")
+      valid_subset = []
+
+    tickers = load_tickers(
+      start_date=start_date,
+      end_date=end_date,
+      index=index,
+    )
+    attempt += 1
+
+  return valid_subset
+
+
 def load_tickers(
   start_date: str,
   end_date: str,
@@ -277,6 +349,7 @@ def load_tickers(
     return validated_tickers
 
 
+# === DATA ===
 def create_price_matrix(
     tickers: list[str],
     start_date: str = "2025-03-01",
@@ -362,75 +435,3 @@ def split_price_matrix(A: ndarray, sentiment_data: ndarray | None = None, train_
     test_sentiment = sentiment_data[split_idx:]
     return train_matrix, test_matrix, train_sentiment, test_sentiment
   return train_matrix, test_matrix, None, None
-
-
-def remove_invalid_tickers_from_cache(invalid_tickers: list[str], cache_path: str) -> None:
-  """
-  Given a set of `invalid_tickers` that have been found, that are currently in the valid cache, remove them from `cache_path`
-
-  Args:
-    invalid_tickers (list[str]): Tickers that have been invalidated
-    cache_path (str): Where to read and write content.
-  """
-  current_tickers: set[str]
-  with open(cache_path, "r") as cache:
-    current_tickers = set(
-      cache.read().splitlines()
-    )
-  updated_cache_content: set[str] = set(
-    current_tickers - set(invalid_tickers)
-  )
-  with open(cache_path,"w") as cache:
-    cache.write(updated_cache_content)
-
-
-def sample_valid_tickers(
-  tickers: list[str],
-  num_stocks: int,
-  start_date: str,
-  end_date: str,
-  cache_path: str,
-  seed: int = 42,
-  max_attempts:int=20,
-  index: str ="nasdaq"
-) -> list[str]:
-  """
-  Randomly sample `num_stocks` tickers and ensure they have valid price data.
-  Retries until a valid set is found.
-  """
-  assert len(tickers) >= num_stocks, "Not enough tickers to sample from."
-
-  random.seed(seed)
-
-  valid_subset: list[str] = []
-  attempt:int = 0
-
-  while len(valid_subset) != num_stocks and attempt < max_attempts:
-    portfolio_tickers = random.sample(tickers, k=num_stocks)
-
-    print(f"Attempt {attempt + 1}\nTrying tickers: {portfolio_tickers}")
-
-    valid_subset, invalid_subset = validate_tickers(
-      tickers=portfolio_tickers, start_date=start_date,
-      end_date=end_date,
-      batch_size=num_stocks if num_stocks <= 20 else 20
-    )
-
-    remove_invalid_tickers_from_cache(invalid_tickers=invalid_subset, cache_path=cache_path)
-
-    if len(valid_subset) == num_stocks:
-      print(f"Found valid tickers: {valid_subset}")
-      return valid_subset
-    else:
-      print(f"[!] Only {len(valid_subset)}/{num_stocks} were valid, retrying...")
-      valid_subset = []
-
-    tickers = load_tickers(
-      start_date=start_date,
-      end_date=end_date,
-      index=index,
-    )
-    attempt += 1
-
-  return valid_subset
-

@@ -5,7 +5,7 @@ from stable_baselines3.common.callbacks import EvalCallback
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import DummyVecEnv
 
-import os, sys, random, time
+import os, sys
 sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
 
 from utils import load_tickers, create_price_matrix, split_price_matrix, sample_valid_tickers, parse_cl_args, return_cl_args
@@ -54,6 +54,11 @@ def main() -> None:
   train_prices, test_prices, train_sentiment, test_sentiment = split_price_matrix(
     A=price_data, sentiment_data=sentiment_data, train_ratio=0.85,
   )
+
+  # print(f"Shape of train: {train_prices.shape}")
+  # print(f"Train data: {train_prices}")
+  # print(f"Shape of test: {test_prices.shape}")
+  # print(f"Test data: {test_prices}")
 
   # === SETUP ENV ===
   # Create portfolio
