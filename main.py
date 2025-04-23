@@ -15,10 +15,10 @@ import torch
 
 
 # === RUN AGENT ===
-def main(num_stocks: int = 20,seed: int = 41,) -> None:
+def main(num_stocks: int = 20,seed: int = 41, index:str="nasdaq", selected_tickers=[""]) -> None:
   # === Load portfolios tickers ===
   # Get all  U.S. or specified index Stock tickers
-  tickers: list[str] = load_tickers()
+  tickers: list[str] = load_tickers(index=index)
   start_date = "2019-05-01"
   end_date = "2020-03-25"
 

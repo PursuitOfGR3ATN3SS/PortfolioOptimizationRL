@@ -96,6 +96,8 @@ def validate_tickers(
     valid_tickers = []
     invalid_tickers = []
 
+    tickers = [t for t in tickers if not t.endswith(("W", "R", "U"))] # Omit warrants, rights, and units
+
     for i in range(0, n, batch_size):
       batch = tickers[i:i + batch_size]
       try:
@@ -319,3 +321,9 @@ def sample_valid_tickers(
           return valid_subset
       else:
           print(f"[!] Only {len(valid_subset)}/{num_stocks} were valid, retrying...")
+          valid_subset = []
+
+  return valid_subset
+
+
+# Get results with and without sentiment
