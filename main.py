@@ -5,53 +5,16 @@ from stable_baselines3.common.callbacks import EvalCallback
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import DummyVecEnv
 
-import argparse
 import os, sys, random, time
 sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
-from utils import validate_tickers, load_tickers, create_price_matrix, split_price_matrix, plot_portfolio_growth, sample_valid_tickers
+from utils import validate_tickers, load_tickers, create_price_matrix, split_price_matrix, plot_portfolio_growth, sample_valid_tickers, parse_cl_args, return_cl_args
 from env import PortfolioEnv
 import numpy as np
 from numpy import ndarray
 import torch
 
 
-def parse_cl_args():
-  parser = argparse.ArgumentParser(description="A stock portfolio that leverages reinforcement learning to reach optimality.")
-  parser.add_argument(
-    "--num_portfolio_stocks",
-    type=int,
-    default=20,
-    help="Number of stocks to include in the stock portfolio"
-  )
-  parser.add_argument(
-    "--start_date",
-    type=str,
-    default="2019-05-01",
-    help="Starting date for portfolio timeframe",
-  )
-  parser.add_argument(
-    "--end_date",
-    type=str,
-    default="2020-03-25",
-    help="Ending date for portfolio timeframe",
-  )
-  parser.add_argument(
-    "--stock_index",
-    type=str,
-    default="nasdaq",
-    choices=["nasdaq", "nyse", "all"],
-    help="The stock index to fetch tickers from",
-  )
-  parser.add_argument(
-    "--random_seed",
-    type=int,
-    default=42,
-    help="Random seed for reproducability"
-  )
-  return parser.parse_args()
 
-def return_cl_args(args) -> tuple[any]:
-  return args.num_portfolio_stocks, args.start_date, args.end_date, args.stock_index, args.random_seed
 
 
 # === RUN AGENT ===

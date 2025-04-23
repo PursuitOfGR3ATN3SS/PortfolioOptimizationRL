@@ -1,3 +1,4 @@
+import argparse
 import yfinance as yf
 import numpy as np
 from numpy import ndarray
@@ -5,6 +6,43 @@ import os, time, random, requests
 import pandas as pd
 import matplotlib.pyplot as plt
 
+def parse_cl_args():
+  parser = argparse.ArgumentParser(description="A stock portfolio that leverages reinforcement learning to reach optimality.")
+  parser.add_argument(
+    "--num_portfolio_stocks",
+    type=int,
+    default=20,
+    help="Number of stocks to include in the stock portfolio"
+  )
+  parser.add_argument(
+    "--start_date",
+    type=str,
+    default="2019-05-01",
+    help="Starting date for portfolio timeframe",
+  )
+  parser.add_argument(
+    "--end_date",
+    type=str,
+    default="2020-03-25",
+    help="Ending date for portfolio timeframe",
+  )
+  parser.add_argument(
+    "--stock_index",
+    type=str,
+    default="nasdaq",
+    choices=["nasdaq", "nyse", "all"],
+    help="The stock index to fetch tickers from",
+  )
+  parser.add_argument(
+    "--random_seed",
+    type=int,
+    default=42,
+    help="Random seed for reproducability"
+  )
+  return parser.parse_args()
+
+def return_cl_args(args) -> tuple[any]:
+  return args.num_portfolio_stocks, args.start_date, args.end_date, args.stock_index, args.random_seed
 
 def get_all_tickers(cached_path: str | None, index:str="all") -> list[str]:
   """
