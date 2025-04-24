@@ -44,10 +44,11 @@ def read_eval_csv(data_location:str) -> tuple[list[int], list[float], list[int]]
   return timesteps, rewards, episodes
 
 
-def plot_portfolio_growth(portfolio_values) -> None:
+def plot_portfolio_growth(portfolio_values, with_sentiment=False) -> None:
   portfolio_growth = np.cumprod(portfolio_values)
   plt.plot(portfolio_growth)
-  plt.title("Portfolio Value Over Time")
+  out = "out" if not with_sentiment else ""
+  plt.title(f"Portfolio value across time with{out} sentiment")
   plt.xlabel("Time Step")
   plt.ylabel("Portfolio Value")
   plt.show()

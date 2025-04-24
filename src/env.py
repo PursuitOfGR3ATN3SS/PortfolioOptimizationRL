@@ -1,4 +1,5 @@
-from gymnasium  import Env, spaces
+from gymnasium import Env
+from gymnasium import spaces
 import numpy as np
 from numpy import ndarray
 
@@ -25,12 +26,9 @@ class PortfolioEnv(Env):
 
     # RL parameters
     self.action_space = spaces.Box(low=0, high=1, shape=(self.num_assets, ),dtype=np.float32)
-    self.observation_space = spaces.Box(
-      low=0,
-      high=1,
-      shape=(self.num_assets * 2 + 1 + 1, ), # Normalized prices for each asset, Each assets weights within the portfolio, normalized cash balance, and sentiment
-      dtype=np.float32
-    )
+    low = np.array([0.0] * (self.num_assets * 2 + 1) + [-1.0], dtype=np.float32)
+    high = np.array([1.0] * (self.num_assets * 2 + 1) + [1.0], dtype=np.float32)
+    self.observation_space = spaces.Box(low=low, high=high, dtype=np.float32)
 
     # State
     self.current_step: int = 0
@@ -54,7 +52,7 @@ x
     self.weights,               # (N,)
     [normalized_cash],          # (1,)
     sentiment                   # (1,)
-])
+    ]).astype(np.float32)
     return observation
 
   def reset(
@@ -80,7 +78,9 @@ x
     self.current_step = 0
     self.current_cash_amount = self.initial_cash_amount
     self.weights = np.ones(self.num_assets, dtype=np.float32) / self.num_assets
-    return self._get_obs(), {}
+    info = {}
+    obs = self._get_obs()
+    return obs, info
 
   def step(self, action: ndarray) -> tuple[ndarray, float, bool, bool, dict]:
     """

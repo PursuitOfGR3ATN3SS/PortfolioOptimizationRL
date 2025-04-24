@@ -47,21 +47,21 @@ def parse_cl_args():
   )
   parser.add_argument(
     "--use_sentiment",
-    type=bool,
-    default=False,
-    choices=[True, False],
+    type=int,
+    default=0,
+    choices=[0,1],
     help="Determines whether or not add news sentiment into optimization strategy"
   )
   parser.add_argument(
     "--best_model_path",
     type=str,
-    default="./cache/model/best_model/best_model.zip",
+    default="./cache/best_model",
     help="Where to store the best model",
   )
   parser.add_argument(
     "--eval_dir",
     type=str,
-    default="./cache/model/best_model/best_model.zip",
+    default="./cache/eval",
     help="Where to store EvalCallback results",
   )
   return parser.parse_args()
@@ -254,14 +254,14 @@ def sample_valid_tickers(
   """
   assert len(tickers) >= num_stocks, "Not enough tickers to sample from."
 
-  print(f"{start_date}-{end_date}")
   random.seed(seed)
 
   valid_subset: list[str] = []
+  invalid_tickers = []
   attempt:int = 0
-
+  all_tickers = tickers.copy()
   while len(valid_subset) != num_stocks and attempt < max_attempts:
-    portfolio_tickers = random.sample(tickers, k=num_stocks)
+    portfolio_tickers = random.sample(all_tickers, k=num_stocks)
 
     print(f"Attempt {attempt + 1}\nTrying tickers: {portfolio_tickers}")
 
@@ -270,22 +270,16 @@ def sample_valid_tickers(
       end_date=end_date,
       batch_size=num_stocks if num_stocks <= 20 else 20
     )
-
-    remove_invalid_tickers_from_cache(invalid_tickers=invalid_subset, cache_path=cache_path)
-
+    invalid_tickers.extend(invalid_subset)
     if len(valid_subset) == num_stocks:
       print(f"Found valid tickers: {valid_subset}")
       return valid_subset
     else:
       print(f"[!] Only {len(valid_subset)}/{num_stocks} were valid, retrying...")
       valid_subset = []
-
-    tickers = load_tickers(
-      start_date=start_date,
-      end_date=end_date,
-      index=index,
-    )
     attempt += 1
+
+  remove_invalid_tickers_from_cache(invalid_tickers=invalid_tickers, cache_path=cache_path)
 
   return valid_subset
 
@@ -319,7 +313,6 @@ def load_tickers(
     list[str] -> Validated set of tickers available in yfinance api.
   """
   cached_path: str = cache_dir + "/" + cache_filename if (cache_filename and cache_dir) else None
-  print(cached_path)
   initial_tickers: list[str] = get_all_tickers(cached_path=cached_path, index=index)
 
   if cached_path and os.path.exists(cached_path):

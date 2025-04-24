@@ -1,0 +1,40 @@
+=========sentiment=False_2019-05-01to2020-03-25_seed=100===========
+Total Reward (Sum of Log Returns): -0.1754
+Cumulative Portfolio Return: 0.8391
+Avg Daily Return: -0.0097
+Volatility using simple returns: 0.0617
+Sharpe ratio using simple returns: -0.6289
+Sharpe ratio using log returns: -0.7474
+
+
+=========sentiment=True_2019-05-01to2020-03-25_seed=100===========
+Sentiment is being used.
+Results across 16 days
+Total Reward (Sum of Log Returns): -0.1538
+Cumulative Portfolio Return: 0.8574
+Avg Daily Return: -0.0084
+Volatility using simple returns: 0.0598
+Sharpe ratio using simple returns: -0.5619
+Sharpe ratio using log returns: -0.6804
+
+
+========sentiment=False_2019-05-01to2019-12-31_seed=100===============
+Sentiment is NOT being used
+Results across 7 days
+Total Reward (Sum of Log Returns): 0.0139
+Cumulative Portfolio Return: 1.0140
+Avg Daily Return: 0.0024
+Volatility using simple returns: 0.0090
+Sharpe ratio using simple returns: 0.6957
+Sharpe ratio using log returns: 0.6839
+
+
+========sentiment=True_2019-05-01to2019-12-31_seed=100===============
+Sentiment is being used.
+Results across 7 days
+Total Reward (Sum of Log Returns): 0.0298
+Cumulative Portfolio Return: 1.0302
+Avg Daily Return: 0.0050
+Volatility using simple returns: 0.0088
+Sharpe ratio using simple returns: 1.5024
+Sharpe ratio using log returns: 1.4964
